@@ -159,3 +159,7 @@ Oracle AI Database 26ai Free, PL/SQL, utPLSQL · Java 21, Spring Boot 3.5, JDBC 
 - Dobór wagonów jest zachłanny: szybki i wystarczający w tej skali, ale nie gwarantuje optimum.
 - Nie ma uwierzytelniania API ani płatności. Projekt skupia się na warstwie danych i integracji.
 - Czasy w bazie są lokalne dla serwera; kontener działa w UTC.
+
+## Licencja
+
+Projekt jest udostępniony na licencji [MIT](LICENSE).
