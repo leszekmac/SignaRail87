@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: signarail-api
+  datasource:
+    url: ${SIGNARAIL_DB_URL:jdbc:oracle:thin:@//localhost:1521/FREEPDB1}
+    username: ${SIGNARAIL_DB_USER:signarail}
+    password: ${SIGNARAIL_DB_PASSWORD:signarail}
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 10000
+  jackson:
+    default-property-inclusion: non_null
+  mvc:
+    problemdetails:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+signarail:
+  notifications:
+    enabled: true
+    poll-interval-ms: 500
+    batch-size: 50
+    queue-capacity: 500
+    workers: 8
+    gateway-failure-rate: 0.1
+    gateway-latency-ms: 20

@@ -1,0 +1,148 @@
+============================================================
+A. Odjazdy ze stacji w oknie 12h - tabela plaska, bez indeksu
+============================================================
+	31 2026-06-30 08:21
+SQL_ID	4ckh587qw5g95, child number 0
+-------------------------------------
+SELECT /*+ gather_plan_statistics */ COUNT(*), MIN(odjazd)   FROM
+perf_postoje_plaska  WHERE id_stacji = :st    AND odjazd >=
+TO_DATE(:t0, 'YYYY-MM-DD HH24:MI')    AND odjazd <  TO_DATE(:t0,
+'YYYY-MM-DD HH24:MI') + 0.5
+
+Plan hash value: 3547334961
+
+--------------------------------------------------------------------------------------------------------------
+| Id  | Operation	    | Name		  | Starts | E-Rows | A-Rows |	 A-Time   | Buffers | Reads  |
+--------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT    |			  |	 1 |	    |	   1 |00:00:00.04 |   10853 |  10851 |
+|   1 |  SORT AGGREGATE     |			  |	 1 |	  1 |	   1 |00:00:00.04 |   10853 |  10851 |
+|*  2 |   FILTER	    |			  |	 1 |	    |	  31 |00:00:00.04 |   10853 |  10851 |
+|*  3 |    TABLE ACCESS FULL| PERF_POSTOJE_PLASKA |	 1 |	 25 |	  31 |00:00:00.04 |   10853 |  10851 |
+--------------------------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5>TO_DATE(:T0,'YYYY-MM-DD HH24:MI'))
+   3 - filter(("ID_STACJI"=:ST AND "ODJAZD">=TO_DATE(:T0,'YYYY-MM-DD HH24:MI') AND
+	      "ODJAZD"<TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5))
+
+============================================================
+B. To samo - partycje miesieczne, indeks niewidoczny
+============================================================
+	31 2026-06-30 08:21
+SQL_ID	71t4f72h97cda, child number 0
+-------------------------------------
+SELECT /*+ gather_plan_statistics */ COUNT(*), MIN(odjazd)   FROM
+kursy_postoje  WHERE id_stacji = :st	AND odjazd >= TO_DATE(:t0,
+'YYYY-MM-DD HH24:MI')	 AND odjazd <  TO_DATE(:t0, 'YYYY-MM-DD
+HH24:MI') + 0.5
+
+Plan hash value: 3431739916
+
+---------------------------------------------------------------------------------------------------------------
+| Id  | Operation		   | Name	   | Starts | E-Rows | A-Rows |   A-Time   | Buffers | Reads  |
+---------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT	   |		   |	  1 |	     |	    1 |00:00:00.01 |	 949 |	  947 |
+|   1 |  SORT AGGREGATE 	   |		   |	  1 |	   1 |	    1 |00:00:00.01 |	 949 |	  947 |
+|*  2 |   FILTER		   |		   |	  1 |	     |	   31 |00:00:00.01 |	 949 |	  947 |
+|   3 |    PARTITION RANGE ITERATOR|		   |	  1 |	  25 |	   31 |00:00:00.01 |	 949 |	  947 |
+|*  4 |     TABLE ACCESS FULL	   | KURSY_POSTOJE |	  1 |	  25 |	   31 |00:00:00.01 |	 949 |	  947 |
+---------------------------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5>TO_DATE(:T0,'YYYY-MM-DD HH24:MI'))
+   4 - filter(("ID_STACJI"=:ST AND "ODJAZD">=TO_DATE(:T0,'YYYY-MM-DD HH24:MI') AND
+	      "ODJAZD"<TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5))
+
+============================================================
+C. To samo - partycje i lokalny indeks (id_stacji, odjazd)
+============================================================
+	31 2026-06-30 08:21
+SQL_ID	71t4f72h97cda, child number 0
+-------------------------------------
+SELECT /*+ gather_plan_statistics */ COUNT(*), MIN(odjazd)   FROM
+kursy_postoje  WHERE id_stacji = :st	AND odjazd >= TO_DATE(:t0,
+'YYYY-MM-DD HH24:MI')	 AND odjazd <  TO_DATE(:t0, 'YYYY-MM-DD
+HH24:MI') + 0.5
+
+Plan hash value: 1906059387
+
+---------------------------------------------------------------------------------------------------------------------
+| Id  | Operation		   | Name		 | Starts | E-Rows | A-Rows |	A-Time	 | Buffers | Reads  |
+---------------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT	   |			 |	1 |	   |	  1 |00:00:00.01 |	 3 |	  3 |
+|   1 |  SORT AGGREGATE 	   |			 |	1 |	 1 |	  1 |00:00:00.01 |	 3 |	  3 |
+|*  2 |   FILTER		   |			 |	1 |	   |	 31 |00:00:00.01 |	 3 |	  3 |
+|   3 |    PARTITION RANGE ITERATOR|			 |	1 |	25 |	 31 |00:00:00.01 |	 3 |	  3 |
+|*  4 |     INDEX RANGE SCAN	   | IX_KP_STACJA_ODJAZD |	1 |	25 |	 31 |00:00:00.01 |	 3 |	  3 |
+---------------------------------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5>TO_DATE(:T0,'YYYY-MM-DD HH24:MI'))
+   4 - access("ID_STACJI"=:ST AND "ODJAZD">=TO_DATE(:T0,'YYYY-MM-DD HH24:MI') AND
+	      "ODJAZD"<TO_DATE(:T0,'YYYY-MM-DD HH24:MI')+.5)
+
+============================================================
+D. Pasazerowie kursu do powiadomienia - bez indeksu
+============================================================
+	30	 1539
+SQL_ID	0r280jwjzu2zm, child number 0
+-------------------------------------
+SELECT /*+ gather_plan_statistics */ COUNT(*), SUM(cena)   FROM
+rezerwacje WHERE id_kursu = :kurs AND status = 'OPLACONA'
+
+Plan hash value: 2519747593
+
+----------------------------------------------------------------------------------------------------
+| Id  | Operation	   | Name	| Starts | E-Rows | A-Rows |   A-Time	| Buffers | Reads  |
+----------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT   |		|      1 |	  |	 1 |00:00:00.13 |   51491 |  25943 |
+|   1 |  SORT AGGREGATE    |		|      1 |	1 |	 1 |00:00:00.13 |   51491 |  25943 |
+|*  2 |   TABLE ACCESS FULL| REZERWACJE |      1 |     28 |	30 |00:00:00.13 |   51491 |  25943 |
+----------------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(("ID_KURSU"=:KURS AND "STATUS"='OPLACONA'))
+
+============================================================
+E. To samo - indeks (id_kursu, status)
+============================================================
+	30	 1539
+SQL_ID	0r280jwjzu2zm, child number 0
+-------------------------------------
+SELECT /*+ gather_plan_statistics */ COUNT(*), SUM(cena)   FROM
+rezerwacje WHERE id_kursu = :kurs AND status = 'OPLACONA'
+
+Plan hash value: 2424145371
+
+------------------------------------------------------------------------------------------------------------------------------
+| Id  | Operation			     | Name		  | Starts | E-Rows | A-Rows |	 A-Time   | Buffers | Reads  |
+------------------------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT		     |			  |	 1 |	    |	   1 |00:00:00.01 |	 63 |	  34 |
+|   1 |  SORT AGGREGATE 		     |			  |	 1 |	  1 |	   1 |00:00:00.01 |	 63 |	  34 |
+|   2 |   TABLE ACCESS BY INDEX ROWID BATCHED| REZERWACJE	  |	 1 |	 28 |	  30 |00:00:00.01 |	 63 |	  34 |
+|*  3 |    INDEX RANGE SCAN		     | IX_REZ_KURS_STATUS |	 1 |	 28 |	  30 |00:00:00.01 |	  3 |	   3 |
+------------------------------------------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   3 - access("ID_KURSU"=:KURS AND "STATUS"='OPLACONA')
+
+============================================================
+F. Czas wyszukiwania: algorytm rundowy (PKG_ROZKLAD) vs rekurencyjny CTE
+============================================================
+RUNDY maks. przesiadek=0: 0 ms, odcinkow wyniku=0
+RUNDY maks. przesiadek=1: 110 ms, odcinkow wyniku=10
+RUNDY maks. przesiadek=2: 240 ms, odcinkow wyniku=13
+RUNDY maks. przesiadek=3: 250 ms, odcinkow wyniku=17
+CTE   maks. przesiadek=0: 0 ms, sciezek do celu=0
+CTE   maks. przesiadek=1: 3890 ms, sciezek do celu=18
+CTE   maks. przesiadek=2: 352290 ms, sciezek do celu=28128

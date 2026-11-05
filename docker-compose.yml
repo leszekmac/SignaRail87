@@ -1,0 +1,46 @@
+# Hasla ponizej dotycza wylacznie lokalnej bazy demonstracyjnej.
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: signarail-oracle
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-signarail_sys}
+      APP_USER: signarail
+      APP_USER_PASSWORD: signarail
+    ports:
+      - "127.0.0.1:1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./database:/signarail-database:ro
+      - ./database/docker-init:/container-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  api:
+    build: ./app-api
+    environment:
+      SIGNARAIL_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SIGNARAIL_DB_USER: signarail
+      SIGNARAIL_DB_PASSWORD: signarail
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      oracle:
+        condition: service_healthy
+
+  makieta-bridge:
+    build: ./makieta-bridge
+    environment:
+      SIGNARAIL_DB_DSN: oracle:1521/FREEPDB1
+      SIGNARAIL_DB_USER: signarail
+      SIGNARAIL_DB_PASSWORD: signarail
+    depends_on:
+      oracle:
+        condition: service_healthy
+
+volumes:
+  oracle-data:

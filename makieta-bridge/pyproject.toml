@@ -1,0 +1,19 @@
+[project]
+name = "makieta-bridge"
+version = "1.0.0"
+description = "Symulator interfejsu sprzetowego makiety H0 dla SignaRail 87"
+requires-python = ">=3.11"
+dependencies = ["oracledb==3.3.0"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+
+[project.scripts]
+makieta-bridge = "makieta_bridge.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["makieta_bridge"]

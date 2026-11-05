@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SIGNARAIL_DB_URL: jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+      SIGNARAIL_DB_DSN: localhost:1521/FREEPDB1
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start Oracle with schema and demo data
+        run: docker compose up -d --wait oracle
+
+      - name: Install utPLSQL
+        run: scripts/install-utplsql.sh
+
+      - name: PL/SQL tests (utPLSQL)
+        run: scripts/test-db.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: API tests, including concurrency on real Oracle
+        working-directory: app-api
+        run: mvn -B verify
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Bridge tests
+        working-directory: makieta-bridge
+        run: |
+          pip install -e ".[dev]"
+          pytest -v
+
+      - name: Oracle logs on failure
+        if: failure()
+        run: docker compose logs oracle --tail 100
